@@ -102,4 +102,26 @@ void main() {
     expect(find.text('« Fiche de révision » ajoutée'), findsOneWidget);
     expect(find.text('Fiche de révision'), findsOneWidget);
   });
+
+  testWidgets('sur tablette, liste et détail sont côte à côte', (tester) async {
+    // Écran de 1280 x 800, au-dessus du seuil de 840 dp.
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _openApp(tester);
+    expect(find.text('Choisis une échéance à gauche.'), findsOneWidget);
+
+    await tester.tap(find.text('Tests unitaires'));
+    await tester.pumpAndSettle();
+
+    // Pas de nouvelle page : la liste est toujours là, le détail à côté.
+    expect(find.text('Détail'), findsNothing);
+    expect(find.text('Projet réseau de neurones'), findsOneWidget);
+    expect(find.text('Marquer comme fait'), findsOneWidget);
+
+    await tester.tap(find.text('Marquer comme fait'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remettre à faire'), findsOneWidget);
+  });
 }

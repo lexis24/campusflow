@@ -5,6 +5,9 @@ import '../utils/dates.dart';
 import 'task_detail_screen.dart';
 import 'task_form_screen.dart';
 
+/// Largeur (en dp) à partir de laquelle on affiche liste et détail côte à côte.
+const _tabletBreakpoint = 840.0;
+
 /// Écran principal : les échéances, les cours et le profil, avec une
 /// NavigationBar en bas pour passer de l'un à l'autre.
 class HomeScreen extends StatefulWidget {
@@ -23,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   User? _user;
   List<Course> _courses = [];
   List<Task> _tasks = [];
+
+  /// Tâche affichée à droite de la liste en mode tablette.
+  String? _selectedTaskId;
 
   @override
   void initState() {
@@ -75,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _tasks.add(newTask);
       _sortTasks();
+      _selectedTaskId = newTask.id;
     });
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('« ${newTask.title} » ajoutée')));
@@ -136,7 +143,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Sur téléphone : juste la liste. À partir de 840 dp (tablette, grand
+  /// écran) : la liste à gauche et le détail de la tâche choisie à droite.
   Widget _buildTaskList() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= _tabletBreakpoint;
+        if (!wide) return _buildTaskListView(wide: false);
+
+        final selected = _tasks
+            .where((t) => t.id == _selectedTaskId)
+            .firstOrNull;
+        return Row(
+          children: [
+            SizedBox(width: 380, child: _buildTaskListView(wide: true)),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: selected == null
+                  ? const Center(child: Text('Choisis une échéance à gauche.'))
+                  : TaskDetailView(
+                      task: selected,
+                      courseTitle: _courseTitle(selected.courseId),
+                      onToggleDone: () =>
+                          _updateTask(selected.copyWith(done: !selected.done)),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTaskListView({required bool wide}) {
     if (_tasks.isEmpty) {
       return const Center(child: Text('Rien à rendre pour le moment.'));
     }
@@ -164,8 +202,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? TextStyle(color: Theme.of(context).colorScheme.error)
                 : null,
           ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _openTask(task),
+          // Sur tablette, la ligne choisie est surlignée et on reste sur
+          // l'écran ; sur téléphone, on ouvre la page de détail.
+          selected: wide && task.id == _selectedTaskId,
+          trailing: wide ? null : const Icon(Icons.chevron_right),
+          onTap: wide
+              ? () => setState(() => _selectedTaskId = task.id)
+              : () => _openTask(task),
         );
       },
     );
