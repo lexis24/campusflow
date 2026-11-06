@@ -2,6 +2,7 @@ import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/dates.dart';
+import 'task_detail_screen.dart';
 
 /// Écran principal : les échéances, les cours et le profil, avec une
 /// NavigationBar en bas pour passer de l'un à l'autre.
@@ -53,6 +54,26 @@ class _HomeScreenState extends State<HomeScreen> {
   String _courseTitle(String courseId) {
     final course = _courses.where((c) => c.id == courseId).firstOrNull;
     return course?.title ?? 'Cours inconnu';
+  }
+
+  // Remplace l'ancienne version de la tâche (même id) par la nouvelle.
+  void _updateTask(Task updated) {
+    setState(() {
+      final index = _tasks.indexWhere((t) => t.id == updated.id);
+      _tasks[index] = updated;
+    });
+  }
+
+  void _openTask(Task task) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TaskDetailScreen(
+          task: task,
+          courseTitle: _courseTitle(task.courseId),
+          onChanged: _updateTask,
+        ),
+      ),
+    );
   }
 
   @override
@@ -127,6 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? TextStyle(color: Theme.of(context).colorScheme.error)
                 : null,
           ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _openTask(task),
         );
       },
     );

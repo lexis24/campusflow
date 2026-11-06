@@ -36,4 +36,32 @@ void main() {
     expect(find.text('Mes cours'), findsOneWidget);
     expect(find.text('Mme Diallo'), findsOneWidget);
   });
+
+  testWidgets('le détail permet de marquer une tâche comme faite', (
+    tester,
+  ) async {
+    await _openApp(tester);
+
+    await tester.tap(find.text('Tests unitaires'));
+    await tester.pumpAndSettle();
+    expect(find.text('Détail'), findsOneWidget);
+    expect(find.text('À faire'), findsOneWidget);
+
+    await tester.tap(find.text('Marquer comme fait'));
+    await tester.pumpAndSettle();
+    expect(find.text('Terminée'), findsOneWidget);
+    expect(find.text('Remettre à faire'), findsOneWidget);
+
+    // De retour sur la liste, la tâche est cochée.
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final tile = find.ancestor(
+      of: find.text('Tests unitaires'),
+      matching: find.byType(ListTile),
+    );
+    expect(
+      find.descendant(of: tile, matching: find.byIcon(Icons.check_circle)),
+      findsOneWidget,
+    );
+  });
 }
