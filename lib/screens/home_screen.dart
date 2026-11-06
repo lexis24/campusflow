@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../utils/dates.dart';
 import 'task_detail_screen.dart';
+import 'task_form_screen.dart';
 
 /// Écran principal : les échéances, les cours et le profil, avec une
 /// NavigationBar en bas pour passer de l'un à l'autre.
@@ -64,6 +65,21 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _addTask() async {
+    final newTask = await Navigator.of(context).push<Task>(
+      MaterialPageRoute(builder: (_) => TaskFormScreen(courses: _courses)),
+    );
+    // null si l'utilisateur a fait retour sans enregistrer.
+    if (newTask == null || !mounted) return;
+
+    setState(() {
+      _tasks.add(newTask);
+      _sortTasks();
+    });
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('« ${newTask.title} » ajoutée')));
+  }
+
   void _openTask(Task task) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -91,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
       floatingActionButton: _currentTab == 0 && !_loading
           ? FloatingActionButton(
-              onPressed: () {},
+              onPressed: _addTask,
               tooltip: 'Nouvelle tâche',
               child: const Icon(Icons.add),
             )

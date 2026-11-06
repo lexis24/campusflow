@@ -64,4 +64,42 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('le formulaire refuse un titre vide', (tester) async {
+    await _openApp(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Enregistrer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Le titre est obligatoire'), findsOneWidget);
+    expect(find.text('Choisis un cours'), findsOneWidget);
+    // On est toujours sur le formulaire.
+    expect(find.text('Nouvelle tâche'), findsOneWidget);
+  });
+
+  testWidgets('le formulaire ajoute une tâche et affiche un SnackBar', (
+    tester,
+  ) async {
+    await _openApp(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Titre'),
+      'Fiche de révision',
+    );
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Intelligence artificielle').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Enregistrer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('« Fiche de révision » ajoutée'), findsOneWidget);
+    expect(find.text('Fiche de révision'), findsOneWidget);
+  });
 }
