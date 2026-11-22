@@ -44,17 +44,23 @@ final filtreProvider = NotifierProvider<FiltreNotifier, FiltreTaches?>(
 /// Fournisseur DÉRIVÉ : la liste affichée, calculée à partir de la liste
 /// partagée et du filtre actif. Il ne stocke rien : il se recalcule seul
 /// quand l'un des deux change (ref.watch).
-final tachesFiltreesProvider = Provider<List<Task>>((ref) {
-  final taches = ref.watch(tachesProvider);
+/// whenData : le chargement et l'erreur sont transmis tels quels, seule la
+/// donnée est filtrée (séance 7).
+final tachesFiltreesProvider = Provider<AsyncValue<List<Task>>>((ref) {
   final filtre = ref.watch(filtreProvider);
-  if (filtre == null) return taches;
-  return taches.where(filtre.accepte).toList();
+  return ref
+      .watch(tachesProvider)
+      .whenData(
+        (taches) =>
+            filtre == null ? taches : taches.where(filtre.accepte).toList(),
+      );
 });
 
 /// Fournisseur DÉRIVÉ : le nombre de tâches de chaque filtre, pour les
-/// compteurs affichés sur les puces (« À faire · 4 »).
+/// compteurs affichés sur les puces (« À faire · 4 »). 0 pendant le
+/// chargement.
 final compteursFiltresProvider = Provider<Map<FiltreTaches, int>>((ref) {
-  final taches = ref.watch(tachesProvider);
+  final taches = ref.watch(tachesProvider).value ?? const <Task>[];
   return {
     for (final filtre in FiltreTaches.values)
       filtre: taches.where(filtre.accepte).length,

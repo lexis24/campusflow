@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Accès réseau à l'API (séance 7), nécessaire aussi en version release. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="campusflow_app"
         android:name="${applicationName}"

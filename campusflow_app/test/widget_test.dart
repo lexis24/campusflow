@@ -1,4 +1,6 @@
+import 'package:campusflow_app/data/fake_task_repository.dart';
 import 'package:campusflow_app/main.dart';
+import 'package:campusflow_app/providers/repository_provider.dart';
 import 'package:campusflow_app/screens/task_detail_screen.dart';
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
@@ -6,12 +8,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-/// Ouvre l'application complète (ProviderScope + routeur) à l'adresse
-/// [adresse], comme si l'utilisateur l'avait saisie.
+/// L'application complète (ProviderScope + routeur) à l'adresse [adresse].
+/// Le repository API est REMPLACÉ par le FakeTaskRepository : les tests ne
+/// dépendent pas d'un serveur allumé (injection de dépendances, séance 7).
+Widget _app({String adresse = '/taches', FakeTaskRepository? repo}) =>
+    ProviderScope(
+      overrides: [
+        taskRepositoryProvider.overrideWithValue(repo ?? FakeTaskRepository()),
+      ],
+      child: CampusFlowApp(initialLocation: adresse),
+    );
+
+/// Ouvre l'application à l'adresse [adresse], comme si l'utilisateur
+/// l'avait saisie, et attend la fin du chargement.
 Future<void> _ouvrir(WidgetTester tester, [String adresse = '/taches']) async {
-  await tester.pumpWidget(
-    ProviderScope(child: CampusFlowApp(initialLocation: adresse)),
-  );
+  await tester.pumpWidget(_app(adresse: adresse));
   await tester.pumpAndSettle();
 }
 
@@ -29,7 +40,7 @@ void main() {
 
   group('Navigation (go_router)', () {
     testWidgets("l'application démarre sur /login", (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: CampusFlowApp()));
+      await tester.pumpWidget(_app(adresse: '/login'));
       await tester.pumpAndSettle();
 
       expect(find.text('CampusFlow'), findsOneWidget);
@@ -119,11 +130,9 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-            child: const CampusFlowApp(initialLocation: '/taches'),
-          ),
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: _app(),
         ),
       );
       await tester.pumpAndSettle();
@@ -269,6 +278,80 @@ void main() {
         find.descendant(of: ligneGL, matching: find.text('3 tâches')),
         findsOneWidget,
       );
+    });
+  });
+
+  // Séance 7 : les trois états à l'écran et les trois requêtes.
+  group('CRUD asynchrone', () {
+    testWidgets('chargement : un indicateur, puis la liste', (tester) async {
+      await tester.pumpWidget(
+        _app(repo: FakeTaskRepository(delai: const Duration(seconds: 1))),
+      );
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Rapport projet réseaux'), findsOneWidget);
+    });
+
+    testWidgets('erreur : message et bouton Réessayer qui recharge', (
+      tester,
+    ) async {
+      final repo = FakeTaskRepository(enPanne: true);
+      await tester.pumpWidget(_app(repo: repo));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Serveur injoignable. Vérifie que json-server est lancé.'),
+        findsOneWidget,
+      );
+
+      // Le serveur revient : « Réessayer » relance GET /taches.
+      repo.enPanne = false;
+      await tester.tap(find.text('Réessayer'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rapport projet réseaux'), findsOneWidget);
+    });
+
+    testWidgets('suppression (DELETE) avec confirmation', (tester) async {
+      await _ouvrir(tester, '/taches');
+      await tester.tap(find.text('Rapport projet réseaux'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Supprimer la tâche'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Supprimer la tâche'));
+      await tester.pumpAndSettle();
+      // Dialog de confirmation.
+      expect(find.text('Supprimer la tâche ?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Supprimer'));
+      await tester.pumpAndSettle();
+
+      // Retour à la liste, tâche disparue, confirmation affichée.
+      expect(find.text('Mes échéances'), findsOneWidget);
+      expect(find.text('« Rapport projet réseaux » supprimée'), findsOneWidget);
+      expect(find.text('Rapport projet réseaux'), findsNothing);
+    });
+
+    testWidgets('un PATCH refusé affiche l\'erreur et ne change rien', (
+      tester,
+    ) async {
+      final repo = FakeTaskRepository();
+      await tester.pumpWidget(_app(repo: repo, adresse: '/taches/t3'));
+      await tester.pumpAndSettle();
+
+      repo.enPanne = true; // le serveur tombe après le chargement
+      await tester.ensureVisible(find.text('Marquer comme fait'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Marquer comme fait'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Serveur injoignable. Vérifie que json-server est lancé.'),
+        findsOneWidget,
+      );
+      expect(find.text('À faire'), findsOneWidget);
     });
   });
 

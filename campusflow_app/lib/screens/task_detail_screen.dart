@@ -1,10 +1,13 @@
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/taches_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/actions.dart';
 import '../utils/dates.dart';
+import 'erreur_reessayer.dart';
 
 /// Écran Détail, adresse /taches/:id (écran secondaire, sur téléphone).
 ///
@@ -19,21 +22,48 @@ class TaskDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // ref.watch : si la tâche change (cochée), l'écran se reconstruit.
-    final task = ref.watch(tacheParIdProvider(id));
+    final etat = ref.watch(tacheParIdProvider(id));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Détail')),
-      body: task == null
-          // Adresse saisie à la main avec un id qui n'existe pas.
-          ? Center(child: Text('Tâche introuvable ($id).'))
-          : TaskDetailView(
-              task: task,
-              courseTitle: ref.watch(titreCoursProvider(task.courseId)),
-              // ref.read dans une action (règle n° 2 du cours).
-              onToggleDone: () =>
-                  ref.read(tachesProvider.notifier).basculer(task.id),
-            ),
+      // Les trois états de l'AsyncValue (séance 7).
+      body: etat.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (erreur, _) => ErreurReessayer(
+          message: '$erreur',
+          onReessayer: () => ref.invalidate(tachesProvider),
+        ),
+        data: (task) => task == null
+            // Adresse saisie à la main avec un id qui n'existe pas.
+            ? Center(child: Text('Tâche introuvable ($id).'))
+            : TaskDetailView(
+                task: task,
+                courseTitle: ref.watch(titreCoursProvider(task.courseId)),
+                // ref.read dans les actions (règle n° 2 du cours).
+                onToggleDone: () => executerAction(
+                  context,
+                  () => ref.read(tachesProvider.notifier).basculer(task.id),
+                ),
+                onDelete: () => _supprimer(context, ref, task),
+              ),
+      ),
     );
+  }
+
+  /// Confirmation, DELETE /taches/:id, puis retour à la liste.
+  Future<void> _supprimer(
+    BuildContext context,
+    WidgetRef ref,
+    Task task,
+  ) async {
+    if (!await confirmerSuppression(context, task.title)) return;
+    if (!context.mounted) return;
+    final ok = await executerAction(
+      context,
+      () => ref.read(tachesProvider.notifier).supprimer(task.id),
+      succes: '« ${task.title} » supprimée',
+    );
+    if (ok && context.mounted) context.pop();
   }
 }
 
@@ -45,11 +75,15 @@ class TaskDetailView extends StatelessWidget {
     required this.task,
     required this.courseTitle,
     required this.onToggleDone,
+    this.onDelete,
   });
 
   final Task task;
   final String courseTitle;
   final VoidCallback onToggleDone;
+
+  /// Suppression (DELETE) ; pas de bouton si null.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +170,17 @@ class TaskDetailView extends StatelessWidget {
               icon: const Icon(Icons.check),
               label: const Text('Marquer comme fait'),
             ),
+          // Action destructrice : bouton texte en couleur d'erreur, discret,
+          // jamais à la place de l'action principale.
+          if (onDelete != null) ...[
+            const SizedBox(height: AppSpacing.s),
+            TextButton.icon(
+              onPressed: onDelete,
+              style: TextButton.styleFrom(foregroundColor: colors.error),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Supprimer la tâche'),
+            ),
+          ],
         ],
       ),
     );

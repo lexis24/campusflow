@@ -10,7 +10,8 @@ class CoursScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cours = ref.watch(coursProvider);
-    final taches = ref.watch(tachesProvider);
+    // .value : la liste chargée (vide pendant le chargement ou en erreur).
+    final taches = ref.watch(tachesProvider).value ?? const [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mes cours')),

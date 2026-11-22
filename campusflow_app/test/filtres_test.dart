@@ -1,29 +1,42 @@
+import 'package:campusflow_app/data/fake_task_repository.dart';
 import 'package:campusflow_app/providers/filtres_provider.dart';
+import 'package:campusflow_app/providers/repository_provider.dart';
 import 'package:campusflow_app/providers/taches_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Tests des fournisseurs dérivés de filtrage (séance 6), sans interface.
+/// Depuis la séance 7, les tâches sont chargées (FakeTaskRepository).
 void main() {
   late ProviderContainer container;
 
-  setUp(() {
-    container = ProviderContainer();
+  setUp(() async {
+    container = ProviderContainer(
+      overrides: [
+        taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
+      ],
+    );
     addTearDown(container.dispose);
+    // Attend la fin du chargement asynchrone.
+    await container.read(tachesProvider.future);
   });
 
-  List<String> idsFiltres() =>
-      container.read(tachesFiltreesProvider).map((t) => t.id).toList();
+  int nombreTaches() => container.read(tachesProvider).requireValue.length;
+  List<String> idsFiltres() => container
+      .read(tachesFiltreesProvider)
+      .requireValue
+      .map((t) => t.id)
+      .toList();
 
   test('sans filtre, toutes les tâches sont affichées', () {
     expect(container.read(filtreProvider), isNull);
-    expect(idsFiltres().length, container.read(tachesProvider).length);
+    expect(idsFiltres().length, nombreTaches());
   });
 
   test('les trois filtres se partagent toutes les tâches, sans doublon', () {
     final compteurs = container.read(compteursFiltresProvider);
     final total = compteurs.values.reduce((a, b) => a + b);
-    expect(total, container.read(tachesProvider).length);
+    expect(total, nombreTaches());
     // Données de démonstration : t1 en retard, t6 faite, 4 à faire.
     expect(compteurs[FiltreTaches.enRetard], 1);
     expect(compteurs[FiltreTaches.faites], 1);
@@ -45,13 +58,13 @@ void main() {
     expect(container.read(filtreProvider), isNull);
   });
 
-  test('la liste dérivée se recalcule quand une tâche est cochée', () {
+  test('la liste dérivée se recalcule quand une tâche est cochée', () async {
     container.read(filtreProvider.notifier).choisir(FiltreTaches.faites);
     expect(idsFiltres(), ['t6']);
 
     // On coche t3 dans l'état partagé : le filtre « Faites » la contient
     // aussitôt, sans rien recopier à la main.
-    container.read(tachesProvider.notifier).basculer('t3');
+    await container.read(tachesProvider.notifier).basculer('t3');
     expect(idsFiltres(), containsAll(['t3', 't6']));
     expect(container.read(compteursFiltresProvider)[FiltreTaches.faites], 2);
   });

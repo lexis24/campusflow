@@ -4,4 +4,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Séance 7 : json-server répond en HTTP (sans S) sur 10.0.2.2:3000.
+         Android bloque le HTTP en clair par défaut depuis la version 9 ;
+         on l'autorise UNIQUEMENT en version debug (développement local). -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

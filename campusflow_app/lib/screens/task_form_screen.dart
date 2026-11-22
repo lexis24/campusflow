@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/taches_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/actions.dart';
 import '../utils/dates.dart';
 
 /// Formulaire de création d'une tâche, adresse /taches/nouvelle.
@@ -74,7 +75,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _setDueDate(DateTime(picked.year, picked.month, picked.day, 18));
   }
 
-  void _save() {
+  /// Vrai pendant l'envoi au serveur : le bouton est désactivé pour éviter
+  /// un double envoi (état éphémère, setState suffit).
+  bool _enCours = false;
+
+  Future<void> _save() async {
     // Lance tous les validator ; s'il y a une erreur, elle s'affiche sous
     // le champ concerné et on s'arrête là.
     if (!_formKey.currentState!.validate()) return;
@@ -86,13 +91,18 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       dueDate: _dueDate,
       courseId: _courseId!,
     );
-    // ref.read dans une action : on appelle le Notifier sans l'écouter.
-    ref.read(tachesProvider.notifier).ajouter(task);
-    // SnackBar de confirmation : le ScaffoldMessenger de l'application
-    // l'affiche encore sur l'écran Échéances après la fermeture.
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('« ${task.title} » ajoutée')));
-    context.pop();
+    setState(() => _enCours = true);
+    // ref.read dans une action : POST /taches. Le SnackBar confirme (il
+    // reste visible sur l'écran Échéances après la fermeture) ou explique
+    // l'erreur ; dans ce cas on reste sur le formulaire, rien n'est perdu.
+    final ok = await executerAction(
+      context,
+      () => ref.read(tachesProvider.notifier).ajouter(task),
+      succes: '« ${task.title} » ajoutée',
+    );
+    if (!mounted) return;
+    setState(() => _enCours = false);
+    if (ok) context.pop();
   }
 
   @override
@@ -173,7 +183,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
               const SizedBox(height: AppSpacing.l),
               FilledButton.icon(
-                onPressed: _save,
+                // null pendant l'envoi : bouton désactivé.
+                onPressed: _enCours ? null : _save,
                 icon: const Icon(Icons.save),
                 label: const Text('Enregistrer'),
               ),

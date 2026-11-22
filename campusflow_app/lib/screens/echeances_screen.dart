@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../providers/filtres_provider.dart';
 import '../providers/taches_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/actions.dart';
 import '../utils/dates.dart';
 import '../utils/periodes.dart';
+import 'erreur_reessayer.dart';
 import 'task_detail_screen.dart';
 
 /// Écran Échéances, adresse /taches (destination 1 de la NavigationBar).
@@ -30,7 +32,7 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
   Widget build(BuildContext context) {
     // ref.watch dans build : l'écran se reconstruit à chaque changement.
     // On affiche la liste DÉRIVÉE (filtrée), pas la liste brute.
-    final taches = ref.watch(tachesFiltreesProvider);
+    final etat = ref.watch(tachesFiltreesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mes échéances')),
@@ -40,7 +42,19 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
           _buildFiltres(),
           // Expanded : la liste prend la hauteur restante. Sans lui, un
           // ListView dans une Column a une hauteur non bornée (séance 5).
-          Expanded(child: _buildTaskList(taches)),
+          Expanded(
+            // Les trois états de l'AsyncValue (séance 7) : when oblige à
+            // traiter chacun, on ne peut pas oublier l'erreur.
+            child: etat.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (erreur, _) => ErreurReessayer(
+                message: '$erreur',
+                // Réessayer : on jette l'état et build() relance GET /taches.
+                onReessayer: () => ref.invalidate(tachesProvider),
+              ),
+              data: _buildTaskList,
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -90,8 +104,7 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
 
         // On cherche la tâche sélectionnée dans la liste complète : elle
         // reste affichée à droite même si le filtre la masque à gauche.
-        final selected = ref
-            .watch(tachesProvider)
+        final selected = (ref.watch(tachesProvider).value ?? const <Task>[])
             .where((t) => t.id == _selectedTaskId)
             .firstOrNull;
         return Row(
@@ -110,16 +123,33 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
                         titreCoursProvider(selected.courseId),
                       ),
                       // ref.read dans une action : on appelle le Notifier
-                      // sans écouter.
-                      onToggleDone: () => ref
-                          .read(tachesProvider.notifier)
-                          .basculer(selected.id),
+                      // sans écouter. PATCH, avec SnackBar en cas d'échec.
+                      onToggleDone: () => executerAction(
+                        context,
+                        () => ref
+                            .read(tachesProvider.notifier)
+                            .basculer(selected.id),
+                      ),
+                      onDelete: () => _supprimer(selected),
                     ),
             ),
           ],
         );
       },
     );
+  }
+
+  /// Suppression depuis le panneau de détail (tablette) : confirmation,
+  /// DELETE /taches/:id, puis le panneau revient à « Choisis une échéance ».
+  Future<void> _supprimer(Task tache) async {
+    if (!await confirmerSuppression(context, tache.title)) return;
+    if (!mounted) return;
+    final ok = await executerAction(
+      context,
+      () => ref.read(tachesProvider.notifier).supprimer(tache.id),
+      succes: '« ${tache.title} » supprimée',
+    );
+    if (ok && mounted) setState(() => _selectedTaskId = null);
   }
 
   /// Liste des échéances groupée par période (variante B, séance 2).

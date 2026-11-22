@@ -12,7 +12,8 @@ class ProfilScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(utilisateurProvider);
-    final taches = ref.watch(tachesProvider);
+    // .value : la liste chargée (vide pendant le chargement ou en erreur).
+    final taches = ref.watch(tachesProvider).value ?? const [];
     final faites = taches.where((t) => t.done).length;
     final textTheme = Theme.of(context).textTheme;
 
