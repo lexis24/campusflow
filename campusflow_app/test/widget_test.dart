@@ -164,6 +164,96 @@ void main() {
     });
   });
 
+  // Le critère du sujet (p. 4) : « une tâche ajoutée ou cochée dans un
+  // écran apparaît immédiatement dans les autres ».
+  group('État partagé (Riverpod)', () {
+    testWidgets('cochée dans le Détail → visible dans la liste et le Profil', (
+      tester,
+    ) async {
+      await _ouvrir(tester);
+      // Données de démonstration : 1 tâche faite sur 6.
+      await tester.tap(find.text('Profil'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 / 6 tâches terminées'), findsOneWidget);
+
+      // On coche « Rapport projet réseaux » depuis son écran Détail.
+      await tester.tap(find.text('Échéances'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rapport projet réseaux'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Marquer comme fait'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Marquer comme fait'));
+      await tester.pumpAndSettle();
+
+      // Retour à la liste : la tâche est cochée, sans aucun callback.
+      // (pageBack() cherche l'info-bulle anglaise « Back » ; l'application
+      // étant en français, on appuie directement sur le BackButton.)
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      // Cochée, la tâche est passée dans la section « Faites », en bas :
+      // ListView.builder ne construit que les lignes visibles, on défile.
+      await tester.scrollUntilVisible(
+        find.text('Rapport projet réseaux'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Faites'), findsOneWidget);
+      final ligne = find.ancestor(
+        of: find.text('Rapport projet réseaux'),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(of: ligne, matching: find.byIcon(Icons.check_circle)),
+        findsOneWidget,
+      );
+
+      // Le Profil, autre écran, voit aussi le changement.
+      await tester.tap(find.text('Profil'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 / 6 tâches terminées'), findsOneWidget);
+    });
+
+    testWidgets('ajoutée dans le Formulaire → comptée dans l\'écran Cours', (
+      tester,
+    ) async {
+      await _ouvrir(tester, '/cours');
+      // Génie logiciel : 2 tâches dans les données de démonstration.
+      final ligneGL = find.ancestor(
+        of: find.text('Génie logiciel'),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(of: ligneGL, matching: find.text('2 tâches')),
+        findsOneWidget,
+      );
+
+      // Ajout d'une tâche de Génie logiciel depuis le formulaire.
+      await tester.tap(find.text('Échéances'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Titre (obligatoire)'),
+        'Revue de code',
+      );
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Génie logiciel').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enregistrer'));
+      await tester.pumpAndSettle();
+
+      // L'écran Cours compte immédiatement la nouvelle tâche.
+      await tester.tap(find.text('Cours'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: ligneGL, matching: find.text('3 tâches')),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('Formulaire', () {
     testWidgets('refuse un titre vide', (tester) async {
       await _ouvrirFormulaire(tester);
