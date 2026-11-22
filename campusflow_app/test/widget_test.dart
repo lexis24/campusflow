@@ -97,6 +97,24 @@ void main() {
       expect(find.text('Cette semaine'), findsOneWidget);
     });
 
+    testWidgets('les trois filtres sont reliés à la liste', (tester) async {
+      await _ouvrir(tester);
+      expect(find.text('À faire · 4'), findsOneWidget);
+      expect(find.text('En retard · 1'), findsOneWidget);
+      expect(find.text('Faites · 1'), findsOneWidget);
+
+      // Filtre « En retard » : seule la fiche de lecture reste.
+      await tester.tap(find.text('En retard · 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Fiche de lecture'), findsOneWidget);
+      expect(find.text('Rapport projet réseaux'), findsNothing);
+
+      // Second appui : le filtre est désactivé, tout réapparaît.
+      await tester.tap(find.text('En retard · 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rapport projet réseaux'), findsOneWidget);
+    });
+
     testWidgets('aucun débordement avec un texte agrandi à 200 %', (
       tester,
     ) async {

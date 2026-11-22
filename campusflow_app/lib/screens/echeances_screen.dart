@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/filtres_provider.dart';
 import '../providers/taches_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/dates.dart';
@@ -28,16 +29,53 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
   @override
   Widget build(BuildContext context) {
     // ref.watch dans build : l'écran se reconstruit à chaque changement.
-    final taches = ref.watch(tachesProvider);
+    // On affiche la liste DÉRIVÉE (filtrée), pas la liste brute.
+    final taches = ref.watch(tachesFiltreesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mes échéances')),
-      body: _buildTaskList(taches),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildFiltres(),
+          // Expanded : la liste prend la hauteur restante. Sans lui, un
+          // ListView dans une Column a une hauteur non bornée (séance 5).
+          Expanded(child: _buildTaskList(taches)),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         // push : le formulaire s'empile, le retour (×) ramène ici.
         onPressed: () => context.push('/taches/nouvelle'),
         tooltip: 'Nouvelle tâche',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  /// Les trois filtres (à faire, en retard, faites) avec leur compteur.
+  /// Wrap : les puces passent à la ligne si la place manque.
+  Widget _buildFiltres() {
+    final filtreActif = ref.watch(filtreProvider);
+    final compteurs = ref.watch(compteursFiltresProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.m,
+        vertical: AppSpacing.s,
+      ),
+      child: Wrap(
+        spacing: AppSpacing.s,
+        runSpacing: AppSpacing.s,
+        children: [
+          for (final filtre in FiltreTaches.values)
+            FilterChip(
+              label: Text('${filtre.libelle} · ${compteurs[filtre]}'),
+              selected: filtreActif == filtre,
+              // ref.read dans une action : on change le filtre actif.
+              onSelected: (_) =>
+                  ref.read(filtreProvider.notifier).choisir(filtre),
+            ),
+        ],
       ),
     );
   }
@@ -50,7 +88,10 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
         final wide = constraints.maxWidth >= AppSizes.tabletBreakpoint;
         if (!wide) return _buildTaskListView(taches, wide: false);
 
-        final selected = taches
+        // On cherche la tâche sélectionnée dans la liste complète : elle
+        // reste affichée à droite même si le filtre la masque à gauche.
+        final selected = ref
+            .watch(tachesProvider)
             .where((t) => t.id == _selectedTaskId)
             .firstOrNull;
         return Row(
@@ -84,7 +125,14 @@ class _EcheancesScreenState extends ConsumerState<EcheancesScreen> {
   /// Liste des échéances groupée par période (variante B, séance 2).
   Widget _buildTaskListView(List<Task> taches, {required bool wide}) {
     if (taches.isEmpty) {
-      return const Center(child: Text('Rien à rendre pour le moment.'));
+      final filtrage = ref.watch(filtreProvider) != null;
+      return Center(
+        child: Text(
+          filtrage
+              ? 'Aucune tâche dans ce filtre.'
+              : 'Rien à rendre pour le moment.',
+        ),
+      );
     }
 
     // Liste « plate » : chaque section donne une ligne d'en-tête suivie de
