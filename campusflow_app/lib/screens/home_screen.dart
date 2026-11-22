@@ -1,12 +1,10 @@
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import '../utils/dates.dart';
 import 'task_detail_screen.dart';
 import 'task_form_screen.dart';
-
-/// Largeur (en dp) à partir de laquelle on affiche liste et détail côte à côte.
-const _tabletBreakpoint = 840.0;
 
 /// Écran principal : les échéances, les cours et le profil, avec une
 /// NavigationBar en bas pour passer de l'un à l'autre.
@@ -148,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTaskList() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= _tabletBreakpoint;
+        final wide = constraints.maxWidth >= AppSizes.tabletBreakpoint;
         if (!wide) return _buildTaskListView(wide: false);
 
         final selected = _tasks
@@ -156,8 +154,11 @@ class _HomeScreenState extends State<HomeScreen> {
             .firstOrNull;
         return Row(
           children: [
-            SizedBox(width: 380, child: _buildTaskListView(wide: true)),
-            const VerticalDivider(width: 1),
+            SizedBox(
+              width: AppSizes.masterPaneWidth,
+              child: _buildTaskListView(wide: true),
+            ),
+            const VerticalDivider(width: AppSizes.hairline),
             Expanded(
               child: selected == null
                   ? const Center(child: Text('Choisis une échéance à gauche.'))
@@ -188,7 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return ListTile(
           leading: Icon(
             task.done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: task.done ? Colors.green : null,
+            // Couleur du thème (contraste 6,12:1) au lieu de Colors.green
+            // en dur (2,64:1, insuffisant) : voir le design system § 1.
+            color: task.done ? Theme.of(context).colorScheme.primary : null,
           ),
           title: Text(
             task.title,
@@ -240,16 +243,16 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
-            radius: 40,
+            radius: AppSizes.avatarRadius,
             child: Text(
               user.name.substring(0, 1).toUpperCase(),
-              style: const TextStyle(fontSize: 32),
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.m),
           Text(user.name, style: Theme.of(context).textTheme.titleLarge),
           Text(user.email),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.l),
           Text('$done / ${_tasks.length} tâches terminées'),
         ],
       ),

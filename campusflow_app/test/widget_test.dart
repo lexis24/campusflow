@@ -1,3 +1,4 @@
+import 'package:campusflow_app/main.dart';
 import 'package:campusflow_app/screens/home_screen.dart';
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,16 @@ Future<void> _openApp(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets("l'application démarre sur l'écran de titre", (tester) async {
+    await tester.pumpWidget(const CampusFlowApp());
+
+    expect(find.text('CampusFlow'), findsOneWidget);
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+    // Après « Commencer », on arrive sur les échéances.
+    expect(find.text('Mes échéances'), findsOneWidget);
+  });
+
   testWidgets('affiche un chargement puis la liste des échéances', (
     tester,
   ) async {

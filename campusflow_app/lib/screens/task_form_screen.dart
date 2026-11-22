@@ -1,6 +1,7 @@
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import '../utils/dates.dart';
 
 /// Formulaire de création d'une tâche. Renvoie la nouvelle [Task] avec
@@ -75,7 +76,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Nouvelle tâche')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.m),
         child: Form(
           key: _formKey,
           child: Column(
@@ -86,7 +87,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Titre',
                   hintText: 'Ex. : Rapport de TP',
-                  border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
@@ -96,12 +96,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.m),
               DropdownButtonFormField<String>(
                 initialValue: _courseId,
                 decoration: const InputDecoration(
                   labelText: 'Cours',
-                  border: OutlineInputBorder(),
                 ),
                 items: [
                   for (final course in widget.courses)
@@ -113,29 +112,27 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 onChanged: (value) => setState(() => _courseId = value),
                 validator: (value) => value == null ? 'Choisis un cours' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.m),
               TextFormField(
                 controller: _dateController,
                 readOnly: true,
                 onTap: _pickDate,
                 decoration: const InputDecoration(
                   labelText: 'À rendre le',
-                  border: OutlineInputBorder(),
                   suffixIcon: Icon(Icons.calendar_today),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.m),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
                   labelText: 'Description (facultatif)',
-                  border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
                 minLines: 3,
                 maxLines: 6,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.l),
               FilledButton.icon(
                 onPressed: _save,
                 icon: const Icon(Icons.save),

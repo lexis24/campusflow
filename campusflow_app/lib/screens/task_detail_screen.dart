@@ -1,6 +1,7 @@
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import '../utils/dates.dart';
 
 /// Page de détail d'une tâche (utilisée sur téléphone, ouverte par-dessus la
@@ -63,18 +64,18 @@ class TaskDetailView extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.m),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(task.title, style: textTheme.headlineSmall),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   _InfoRow(icon: Icons.school_outlined, text: courseTitle),
                   _InfoRow(
                     icon: Icons.event_outlined,
@@ -88,13 +89,13 @@ class TaskDetailView extends StatelessWidget {
                         : Icons.hourglass_empty,
                     text: task.done ? 'Terminée' : 'À faire',
                   ),
-                  const Divider(height: 32),
+                  const Divider(height: AppSpacing.xl),
                   Text(task.description, style: textTheme.bodyLarge),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.m),
           if (task.done)
             FilledButton.tonalIcon(
               onPressed: onToggleDone,
@@ -122,11 +123,11 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
+          Icon(icon, size: AppSizes.infoIcon),
+          const SizedBox(width: AppSpacing.s),
           Expanded(child: Text(text)),
         ],
       ),
