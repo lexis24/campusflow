@@ -58,4 +58,4 @@ campusflow_app/lib/
 - [x] **Séance 5** : écrans Échéances (variante B), Détail et Formulaire, [version tablette à 840 dp](docs/seance5/tablette-paysage.png)
 - [x] **Séance 6** : navigation par adresses (GoRouter, ShellRoute), état partagé entre les trois écrans, trois filtres
 - [x] **Séance 7** : API json-server, couches Repository, liste connectée ([données](docs/seance7/etat-donnees-api.png), [erreur et Réessayer](docs/seance7/etat-erreur-reessayer.png), POST, PATCH, DELETE), connexion avec jeton sécurisé ([session conservée](docs/seance7/session-conservee.png), [redirection sur 401](docs/seance7/redirection-401.png))
-- [ ] Lien du dépôt GitHub ouvert en lecture et envoyé à l'enseignant
+- [x] Lien du dépôt GitHub ouvert en lecture et envoyé à l'enseignant
