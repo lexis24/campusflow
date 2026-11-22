@@ -44,6 +44,8 @@ dependencies:
   # Séance 6 : état partagé (Riverpod) et navigation par adresse (go_router).
   flutter_riverpod: ^3.5.0
   go_router: ^18.1.4
+  # Séance 7 : client HTTP pour l'API json-server.
+  dio: ^5.11.1
 
 dev_dependencies:
   flutter_test:
