@@ -3,6 +3,7 @@ import 'package:campusflow_app/screens/home_screen.dart';
 import 'package:campusflow_app/screens/task_detail_screen.dart';
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -22,7 +23,8 @@ void main() {
   setUpAll(() => initializeDateFormatting('fr'));
 
   testWidgets("l'application démarre sur l'écran de titre", (tester) async {
-    await tester.pumpWidget(const CampusFlowApp());
+    // Comme dans main() : l'application est enveloppée dans un ProviderScope.
+    await tester.pumpWidget(const ProviderScope(child: CampusFlowApp()));
 
     expect(find.text('CampusFlow'), findsOneWidget);
     // L'asset déclaré dans pubspec.yaml est affiché.
