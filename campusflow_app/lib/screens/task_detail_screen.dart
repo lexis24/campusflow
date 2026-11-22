@@ -61,41 +61,77 @@ class TaskDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final late = !task.done && daysLeft(task.dueDate) < 0;
 
+    // Structure reprise du wireframe 03-detail (séance 2) :
+    // badge de date, titre, carte d'informations, description, bouton.
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.m),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(task.title, style: textTheme.headlineSmall),
-                  const SizedBox(height: AppSpacing.sm),
-                  _InfoRow(icon: Icons.school_outlined, text: courseTitle),
-                  _InfoRow(
-                    icon: Icons.event_outlined,
-                    text:
-                        '${formatDate(task.dueDate)} · '
-                        '${relativeDueDate(task.dueDate)}',
-                  ),
-                  _InfoRow(
-                    icon: task.done
-                        ? Icons.check_circle
-                        : Icons.hourglass_empty,
-                    text: task.done ? 'Terminée' : 'À faire',
-                  ),
-                  const Divider(height: AppSpacing.xl),
-                  Text(task.description, style: textTheme.bodyLarge),
-                ],
+          // Badge de date relative, en couleur d'erreur si en retard.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Chip(
+              avatar: Icon(
+                Icons.schedule,
+                color: late ? colors.onErrorContainer : null,
               ),
+              label: Text(task.done ? 'Rendue' : relativeDueDate(task.dueDate)),
+              backgroundColor: late ? colors.errorContainer : null,
+              labelStyle: late
+                  ? TextStyle(color: colors.onErrorContainer)
+                  : null,
             ),
           ),
+          const SizedBox(height: AppSpacing.s),
+          Text(task.title, style: textTheme.headlineSmall),
           const SizedBox(height: AppSpacing.m),
+          // La Card regroupe les informations, chacune avec son libellé.
+          Card(
+            child: Column(
+              children: [
+                _InfoRow(
+                  icon: Icons.school_outlined,
+                  label: 'Cours',
+                  value: courseTitle,
+                ),
+                const Divider(height: AppSizes.hairline),
+                _InfoRow(
+                  icon: Icons.event_outlined,
+                  label: "Date d'échéance",
+                  value: formatDate(task.dueDate),
+                ),
+                const Divider(height: AppSizes.hairline),
+                _InfoRow(
+                  icon: task.done ? Icons.check_circle : Icons.hourglass_empty,
+                  label: 'Statut',
+                  value: task.done ? 'Terminée' : 'À faire',
+                ),
+              ],
+            ),
+          ),
+          // La description est facultative : pas de bloc vide.
+          if (task.description.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.l),
+            Text(
+              'Description',
+              style: textTheme.titleSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.m),
+                child: Text(task.description, style: textTheme.bodyLarge),
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.l),
           if (task.done)
             FilledButton.tonalIcon(
               onPressed: onToggleDone,
@@ -114,21 +150,45 @@ class TaskDetailView extends StatelessWidget {
   }
 }
 
+/// Une ligne d'information de la carte : icône, libellé et valeur.
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
-  final String text;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      padding: const EdgeInsets.all(AppSpacing.m),
       child: Row(
         children: [
-          Icon(icon, size: AppSizes.infoIcon),
-          const SizedBox(width: AppSpacing.s),
-          Expanded(child: Text(text)),
+          Icon(icon, size: AppSizes.infoIcon, color: colors.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.m),
+          // Expanded : la valeur prend la place restante et passe à la
+          // ligne si elle est longue, au lieu de faire déborder la Row.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                Text(value, style: textTheme.bodyLarge),
+              ],
+            ),
+          ),
         ],
       ),
     );

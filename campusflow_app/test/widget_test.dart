@@ -1,5 +1,6 @@
 import 'package:campusflow_app/main.dart';
 import 'package:campusflow_app/screens/home_screen.dart';
+import 'package:campusflow_app/screens/task_detail_screen.dart';
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,6 +77,37 @@ void main() {
     // Un « RenderFlex overflowed » ferait échouer le test ici.
     expect(tester.takeException(), isNull);
     expect(find.text('En retard'), findsOneWidget);
+  });
+
+  testWidgets('le détail masque le bloc Description quand il est vide', (
+    tester,
+  ) async {
+    final task = Task(
+      id: 't9',
+      title: 'Exposé',
+      description: '',
+      dueDate: DateTime(2026, 12, 1),
+      courseId: 'c1',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TaskDetailView(
+            task: task,
+            courseTitle: 'Génie logiciel',
+            onToggleDone: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Exposé'), findsOneWidget);
+    expect(find.text('Génie logiciel'), findsOneWidget);
+    expect(find.text('Description'), findsNothing);
+    expect(
+      find.widgetWithText(FilledButton, 'Marquer comme fait'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('la NavigationBar affiche les cours', (tester) async {

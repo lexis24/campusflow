@@ -43,6 +43,7 @@ Les choix découlent des étapes précédentes :
 | Lien, bouton texte | `primary` #515B92 | `surface` #FBF8FF | **6,12:1** | 4,5 | ✓ |
 | Texte « En retard » | `error` #BA1A1A | `surface` #FBF8FF | **6,14:1** | 4,5 | ✓ |
 | Texte sur badge d'erreur | `onError` #FFFFFF | `error` #BA1A1A | **6,46:1** | 4,5 | ✓ |
+| Badge « en retard » (écran Détail, ajouté en séance 5) | `onErrorContainer` #93000A | `errorContainer` #FFDAD6 | **7,24:1** | 4,5 | ✓ |
 | Puce active, ligne sélectionnée | `onSecondaryContainer` #434659 | `secondaryContainer` #E0E1F9 | **7,22:1** | 4,5 | ✓ |
 | Texte sur conteneur primaire | `onPrimaryContainer` #394379 | `primaryContainer` #DEE0FF | **7,20:1** | 4,5 | ✓ |
 | En-tête de section | `onSurface` #1B1B21 | `surfaceContainerHighest` #E4E1E9 | **13,26:1** | 4,5 | ✓ |
