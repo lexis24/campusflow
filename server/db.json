@@ -1,0 +1,65 @@
+{
+  "taches": [
+    {
+      "id": "t1",
+      "title": "Fiche de lecture",
+      "description": "Résumé d'un article technique en anglais, 2 pages.",
+      "dueDate": "2026-11-21T18:00:00.000",
+      "done": false,
+      "courseId": "c4"
+    },
+    {
+      "id": "t2",
+      "title": "Quiz en ligne",
+      "description": "Quiz de 20 questions sur la normalisation.",
+      "dueDate": "2026-11-22T23:00:00.000",
+      "done": false,
+      "courseId": "c2"
+    },
+    {
+      "id": "t3",
+      "title": "Rapport projet réseaux",
+      "description": "Rapport de 10 pages : plan d'adressage IP, VLAN et tests de connectivité. Rendu en PDF sur la plateforme, en binôme.",
+      "dueDate": "2026-11-23T18:00:00.000",
+      "done": false,
+      "courseId": "c1"
+    },
+    {
+      "id": "t4",
+      "title": "TP Bases de données",
+      "description": "Requêtes SQL avec jointures et sous-requêtes.",
+      "dueDate": "2026-11-25T18:00:00.000",
+      "done": false,
+      "courseId": "c2"
+    },
+    {
+      "id": "t5",
+      "title": "Exposé Génie logiciel",
+      "description": "Présentation de 15 minutes sur les méthodes agiles.",
+      "dueDate": "2026-12-04T18:00:00.000",
+      "done": false,
+      "courseId": "c3"
+    },
+    {
+      "id": "t6",
+      "title": "Diagramme de classes",
+      "description": "Modélisation UML du projet de groupe.",
+      "dueDate": "2026-11-18T18:00:00.000",
+      "done": true,
+      "courseId": "c3"
+    }
+  ],
+  "cours": [
+    { "id": "c1", "title": "Réseaux informatiques", "teacher": "M. Kaboré" },
+    { "id": "c2", "title": "Bases de données", "teacher": "Mme Ilboudo" },
+    { "id": "c3", "title": "Génie logiciel", "teacher": "M. Sawadogo" },
+    { "id": "c4", "title": "Anglais technique", "teacher": "M. Zongo" }
+  ],
+  "utilisateurs": [
+    {
+      "id": "u1",
+      "name": "Sanata Ouédraogo",
+      "email": "sanata.ouedraogo@exemple.bf"
+    }
+  ]
+}
