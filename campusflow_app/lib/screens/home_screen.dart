@@ -72,7 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _addTask() async {
     final newTask = await Navigator.of(context).push<Task>(
-      MaterialPageRoute(builder: (_) => TaskFormScreen(courses: _courses)),
+      MaterialPageRoute(
+        builder: (_) => TaskFormScreen(courses: _courses),
+        // Écran de saisie : bouton × « Fermer » au lieu de la flèche retour.
+        fullscreenDialog: true,
+      ),
     );
     // null si l'utilisateur a fait retour sans enregistrer.
     if (newTask == null || !mounted) return;

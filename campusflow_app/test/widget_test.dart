@@ -148,6 +148,47 @@ void main() {
     );
   });
 
+  testWidgets('les puces de date changent la date du formulaire', (
+    tester,
+  ) async {
+    await _openApp(tester);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    // Bouton × (fullscreenDialog) et puce « Demain » présélectionnée.
+    expect(find.byIcon(Icons.close), findsOneWidget);
+    ChoiceChip chip(String label) =>
+        tester.widget(find.widgetWithText(ChoiceChip, label));
+    expect(chip('Demain').selected, isTrue);
+
+    await tester.tap(find.text('Dans 3 jours'));
+    await tester.pump();
+    expect(chip('Dans 3 jours').selected, isTrue);
+    expect(chip('Demain').selected, isFalse);
+  });
+
+  testWidgets('avec le clavier ouvert, le formulaire défile sans déborder', (
+    tester,
+  ) async {
+    await _openApp(tester);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    // Simule un clavier qui occupe 400 pixels en bas de l'écran.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 400);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // Le bouton Enregistrer reste atteignable en faisant défiler.
+    await tester.scrollUntilVisible(
+      find.text('Enregistrer'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Enregistrer').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('le formulaire refuse un titre vide', (tester) async {
     await _openApp(tester);
 
@@ -171,7 +212,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Titre'),
+      find.widgetWithText(TextFormField, 'Titre (obligatoire)'),
       'Fiche de révision',
     );
     await tester.tap(find.byType(DropdownButtonFormField<String>));

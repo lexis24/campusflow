@@ -22,8 +22,25 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   final _dateController = TextEditingController();
 
   String? _courseId;
-  // Par défaut, à rendre dans une semaine.
-  DateTime _dueDate = DateTime.now().add(const Duration(days: 7));
+  // Par défaut, à rendre demain (puce présélectionnée dans le wireframe).
+  DateTime _dueDate = _inDays(1);
+
+  /// Raccourcis de date du wireframe 04 : « ajout en 3 appuis » (parcours,
+  /// étape 3). Nombre de jours à partir d'aujourd'hui → libellé de la puce.
+  static const _shortcuts = {0: "Aujourd'hui", 1: 'Demain', 3: 'Dans 3 jours'};
+
+  /// Date dans [days] jours, à 18 h (heure de rendu habituelle).
+  static DateTime _inDays(int days) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day + days, 18);
+  }
+
+  void _setDueDate(DateTime date) {
+    setState(() {
+      _dueDate = date;
+      _dateController.text = formatDate(_dueDate);
+    });
+  }
 
   @override
   void initState() {
@@ -49,11 +66,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     );
     if (picked == null) return;
 
-    setState(() {
-      // On fixe l'heure de rendu à 18h, comme pour les autres tâches.
-      _dueDate = DateTime(picked.year, picked.month, picked.day, 18);
-      _dateController.text = formatDate(_dueDate);
-    });
+    // On fixe l'heure de rendu à 18h, comme pour les autres tâches.
+    _setDueDate(DateTime(picked.year, picked.month, picked.day, 18));
   }
 
   void _save() {
@@ -85,8 +99,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
-                  labelText: 'Titre',
-                  hintText: 'Ex. : Rapport de TP',
+                  labelText: 'Titre (obligatoire)',
+                  hintText: 'Ex. Rapport projet réseaux',
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
@@ -109,6 +123,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 ],
                 onChanged: (value) => setState(() => _courseId = value),
                 validator: (value) => value == null ? 'Choisis un cours' : null,
+              ),
+              const SizedBox(height: AppSpacing.m),
+              // Raccourcis de date. Wrap (et non Row) : les puces passent à
+              // la ligne si la place manque (texte agrandi), sans débordement.
+              Wrap(
+                spacing: AppSpacing.s,
+                runSpacing: AppSpacing.s,
+                children: [
+                  for (final MapEntry(key: days, value: label)
+                      in _shortcuts.entries)
+                    ChoiceChip(
+                      label: Text(label),
+                      selected: daysLeft(_dueDate) == days,
+                      onSelected: (_) => _setDueDate(_inDays(days)),
+                    ),
+                ],
               ),
               const SizedBox(height: AppSpacing.m),
               TextFormField(
