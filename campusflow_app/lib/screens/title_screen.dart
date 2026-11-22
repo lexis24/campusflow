@@ -11,9 +11,8 @@ class TitleScreen extends StatelessWidget {
 
   void _start(BuildContext context) {
     // pushReplacement : on ne revient pas sur l'écran de titre avec « retour ».
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
@@ -29,6 +28,14 @@ class TitleScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
+              // Asset déclaré dans pubspec.yaml (flutter > assets).
+              // semanticLabel : lu par le lecteur d'écran (accessibilité).
+              Image.asset(
+                'assets/images/logo.png',
+                height: AppSizes.logo,
+                semanticLabel: 'Logo CampusFlow',
+              ),
+              const SizedBox(height: AppSpacing.l),
               Text(
                 'CampusFlow',
                 textAlign: TextAlign.center,

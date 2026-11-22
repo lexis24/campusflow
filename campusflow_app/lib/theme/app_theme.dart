@@ -49,6 +49,9 @@ abstract final class AppSizes {
 
   /// Taille des petites icônes d'information (écran Détail).
   static const double infoIcon = 20;
+
+  /// Côté du logo sur l'écran de titre.
+  static const double logo = 120;
 }
 
 abstract final class AppTheme {

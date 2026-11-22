@@ -99,9 +99,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               const SizedBox(height: AppSpacing.m),
               DropdownButtonFormField<String>(
                 initialValue: _courseId,
-                decoration: const InputDecoration(
-                  labelText: 'Cours',
-                ),
+                decoration: const InputDecoration(labelText: 'Cours'),
                 items: [
                   for (final course in widget.courses)
                     DropdownMenuItem(

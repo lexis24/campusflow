@@ -1,21 +1,25 @@
-const _months = [
-  'janv.',
-  'févr.',
-  'mars',
-  'avr.',
-  'mai',
-  'juin',
-  'juil.',
-  'août',
-  'sept.',
-  'oct.',
-  'nov.',
-  'déc.',
-];
+import 'package:intl/intl.dart';
+
+/// Format « jour mois-abrégé année » en français, fourni par le package intl.
+/// Les données de la locale « fr » sont chargées dans main()
+/// avec initializeDateFormatting('fr').
+final _dateFormat = DateFormat('d MMM y', 'fr');
 
 /// Ex. : "2 nov. 2026"
-String formatDate(DateTime date) {
-  return '${date.day} ${_months[date.month - 1]} ${date.year}';
+String formatDate(DateTime date) => _dateFormat.format(date);
+
+/// Format court « jour-abrégé jour mois-abrégé » : "mer. 25 nov.".
+final _shortFormat = DateFormat('E d MMM', 'fr');
+
+/// Date courte pour la colonne de droite d'une ligne de tâche (variante B) :
+/// "Hier", "Aujourd'hui", "Demain", sinon "mer. 25 nov.".
+/// Volontairement court pour ne pas déborder de la ligne.
+String shortDueDate(DateTime dueDate, {DateTime? now}) {
+  final days = daysLeft(dueDate, now: now);
+  if (days == -1) return 'Hier';
+  if (days == 0) return "Aujourd'hui";
+  if (days == 1) return 'Demain';
+  return _shortFormat.format(dueDate);
 }
 
 /// Nombre de jours entre aujourd'hui et [dueDate] (négatif si c'est passé).

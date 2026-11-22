@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'screens/title_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  // Charge les noms de mois et de jours français utilisés par intl
+  // (DateFormat dans utils/dates.dart) avant d'afficher le premier écran.
+  await initializeDateFormatting('fr');
   runApp(const CampusFlowApp());
 }
 

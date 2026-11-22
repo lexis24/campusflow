@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../utils/dates.dart';
+import '../utils/periodes.dart';
 import 'task_detail_screen.dart';
 import 'task_form_screen.dart';
 
@@ -175,45 +176,98 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Liste des échéances groupée par période (variante B, séance 2).
   Widget _buildTaskListView({required bool wide}) {
     if (_tasks.isEmpty) {
       return const Center(child: Text('Rien à rendre pour le moment.'));
     }
 
-    return ListView.builder(
-      itemCount: _tasks.length,
-      itemBuilder: (context, index) {
-        final task = _tasks[index];
-        final late = !task.done && daysLeft(task.dueDate) < 0;
+    // Liste « plate » : chaque section donne une ligne d'en-tête suivie de
+    // ses tâches. Un seul ListView.builder construit ensuite toutes les
+    // lignes, et seulement celles visibles à l'écran.
+    final lignes = <_Ligne>[
+      for (final MapEntry(key: periode, value: taches) in grouperParPeriode(
+        _tasks,
+      ).entries) ...[
+        _EnTete(periode, taches.length),
+        for (final tache in taches) _LigneTache(tache),
+      ],
+    ];
 
-        return ListTile(
-          leading: Icon(
-            task.done ? Icons.check_circle : Icons.radio_button_unchecked,
-            // Couleur du thème (contraste 6,12:1) au lieu de Colors.green
-            // en dur (2,64:1, insuffisant) : voir le design system § 1.
-            color: task.done ? Theme.of(context).colorScheme.primary : null,
-          ),
-          title: Text(
-            task.title,
-            style: task.done
-                ? const TextStyle(decoration: TextDecoration.lineThrough)
-                : null,
-          ),
-          subtitle: Text(
-            '${_courseTitle(task.courseId)} · ${relativeDueDate(task.dueDate)}',
-            style: late
-                ? TextStyle(color: Theme.of(context).colorScheme.error)
-                : null,
-          ),
-          // Sur tablette, la ligne choisie est surlignée et on reste sur
-          // l'écran ; sur téléphone, on ouvre la page de détail.
-          selected: wide && task.id == _selectedTaskId,
-          trailing: wide ? null : const Icon(Icons.chevron_right),
-          onTap: wide
-              ? () => setState(() => _selectedTaskId = task.id)
-              : () => _openTask(task),
-        );
+    return ListView.builder(
+      itemCount: lignes.length,
+      // Le switch sur une sealed class oblige à traiter les deux cas.
+      itemBuilder: (context, index) => switch (lignes[index]) {
+        _EnTete(:final periode, :final nombre) => _buildEnTete(periode, nombre),
+        _LigneTache(:final task) => _buildTaskTile(task, wide: wide),
       },
+    );
+  }
+
+  /// En-tête de section, lui aussi un ListTile (« chaque ligne est un
+  /// ListTile »). « En retard » prend les couleurs d'erreur du thème,
+  /// les autres le fond surfaceContainerHighest (design system § 4.2).
+  Widget _buildEnTete(Periode periode, int nombre) {
+    final colors = Theme.of(context).colorScheme;
+    final enRetard = periode == Periode.enRetard;
+    final fond = enRetard ? colors.error : colors.surfaceContainerHighest;
+    final texte = enRetard ? colors.onError : colors.onSurface;
+    final style = Theme.of(context).textTheme.titleMedium
+        ?.copyWith(color: texte);
+
+    // header: true : le lecteur d'écran annonce un titre de section.
+    return Semantics(
+      header: true,
+      child: ListTile(
+        dense: true,
+        tileColor: fond,
+        iconColor: texte,
+        leading: enRetard ? const Icon(Icons.error_outline) : null,
+        title: Text(periode.libelle, style: style),
+        trailing: Text('$nombre', style: style),
+      ),
+    );
+  }
+
+  /// Ligne de tâche (design system § 4.2) : titre, cours en sous-titre,
+  /// date courte à droite, en couleur d'erreur si la tâche est en retard.
+  Widget _buildTaskTile(Task task, {required bool wide}) {
+    final colors = Theme.of(context).colorScheme;
+    final late = !task.done && daysLeft(task.dueDate) < 0;
+
+    return ListTile(
+      leading: Icon(
+        task.done ? Icons.check_circle : Icons.radio_button_unchecked,
+        // Couleur du thème (contraste 6,12:1) au lieu de Colors.green
+        // en dur (2,64:1, insuffisant) : voir le design system § 1.
+        color: task.done ? colors.primary : null,
+      ),
+      title: Text(
+        task.title,
+        style: task.done
+            ? const TextStyle(decoration: TextDecoration.lineThrough)
+            : null,
+      ),
+      subtitle: Text(_courseTitle(task.courseId)),
+      trailing: Row(
+        // min : la Row prend juste la place de la date et du chevron,
+        // sinon elle voudrait toute la largeur du trailing.
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            shortDueDate(task.dueDate),
+            style: late ? TextStyle(color: colors.error) : null,
+          ),
+          // Sur tablette, pas de chevron : le détail s'affiche à côté.
+          if (!wide) const Icon(Icons.chevron_right),
+        ],
+      ),
+      // Sur tablette, la ligne choisie est surlignée et on reste sur
+      // l'écran ; sur téléphone, on ouvre la page de détail.
+      selected: wide && task.id == _selectedTaskId,
+      onTap: wide
+          ? () => setState(() => _selectedTaskId = task.id)
+          : () => _openTask(task),
     );
   }
 
@@ -258,4 +312,25 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+/// Une ligne de la liste des échéances : soit un en-tête de section,
+/// soit une tâche. « sealed » : il n'existe que ces deux sortes de lignes.
+sealed class _Ligne {
+  const _Ligne();
+}
+
+/// En-tête de section : la période et le nombre de tâches qu'elle contient.
+class _EnTete extends _Ligne {
+  const _EnTete(this.periode, this.nombre);
+
+  final Periode periode;
+  final int nombre;
+}
+
+/// Ligne de tâche.
+class _LigneTache extends _Ligne {
+  const _LigneTache(this.task);
+
+  final Task task;
 }

@@ -3,6 +3,7 @@ import 'package:campusflow_app/screens/home_screen.dart';
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 // Pas d'attente d'1 seconde dans les tests.
 const _repository = CampusRepository(delay: Duration.zero);
@@ -15,10 +16,16 @@ Future<void> _openApp(WidgetTester tester) async {
 }
 
 void main() {
+  // Les tests n'appellent pas main() : on charge ici la locale française
+  // utilisée par intl pour formater les dates.
+  setUpAll(() => initializeDateFormatting('fr'));
+
   testWidgets("l'application démarre sur l'écran de titre", (tester) async {
     await tester.pumpWidget(const CampusFlowApp());
 
     expect(find.text('CampusFlow'), findsOneWidget);
+    // L'asset déclaré dans pubspec.yaml est affiché.
+    expect(find.bySemanticsLabel('Logo CampusFlow'), findsOneWidget);
     await tester.tap(find.text('Commencer'));
     await tester.pumpAndSettle();
     // Après « Commencer », on arrive sur les échéances.
@@ -36,6 +43,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('TP modèles Dart'), findsOneWidget);
     expect(find.text('Projet réseau de neurones'), findsOneWidget);
+  });
+
+  testWidgets('les échéances sont groupées par période (variante B)', (
+    tester,
+  ) async {
+    await _openApp(tester);
+
+    // Données de démonstration : 2 tâches en retard, 1 faite.
+    expect(find.text('En retard'), findsOneWidget);
+    expect(find.text('Faites'), findsOneWidget);
+    // Chaque ligne, en-têtes compris, est un ListTile : 2 en-têtes + 3 tâches.
+    expect(find.byType(ListTile), findsNWidgets(5));
+  });
+
+  testWidgets('aucun débordement avec un texte agrandi à 200 %', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        // Simule le réglage « taille du texte » du téléphone au maximum.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: const HomeScreen(repository: _repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Un « RenderFlex overflowed » ferait échouer le test ici.
+    expect(tester.takeException(), isNull);
+    expect(find.text('En retard'), findsOneWidget);
   });
 
   testWidgets('la NavigationBar affiche les cours', (tester) async {
