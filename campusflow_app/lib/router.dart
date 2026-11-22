@@ -22,7 +22,16 @@ import 'screens/task_form_screen.dart';
 ///
 /// Une fonction (et non une variable globale) : chaque test peut créer
 /// son propre routeur, en partant de n'importe quelle adresse.
-GoRouter createRouter({String initialLocation = '/login'}) {
+///
+/// Connexion (séance 7) : [estConnecte] et [enChargement] décrivent la
+/// session ; [rafraichir] prévient le routeur quand elle change (connexion,
+/// déconnexion, 401), pour qu'il réapplique la règle de redirection.
+GoRouter createRouter({
+  String initialLocation = '/login',
+  bool Function()? estConnecte,
+  bool Function()? enChargement,
+  Listenable? rafraichir,
+}) {
   // Navigateur racine : les écrans secondaires s'y affichent, par-dessus
   // la coquille, donc en plein écran et sans la barre de navigation.
   final rootKey = GlobalKey<NavigatorState>();
@@ -30,6 +39,17 @@ GoRouter createRouter({String initialLocation = '/login'}) {
   return GoRouter(
     navigatorKey: rootKey,
     initialLocation: initialLocation,
+    refreshListenable: rafraichir,
+    // Consultée à chaque navigation : pas de session → /login.
+    redirect: (_, state) {
+      // Session encore en cours de lecture dans le stockage : on attend.
+      if (estConnecte == null || (enChargement?.call() ?? false)) return null;
+      final connecte = estConnecte();
+      final versLogin = state.matchedLocation == '/login';
+      if (!connecte && !versLogin) return '/login';
+      if (connecte && versLogin) return '/taches';
+      return null;
+    },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
 

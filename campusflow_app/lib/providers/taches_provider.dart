@@ -2,6 +2,7 @@ import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/donnees_demo.dart';
+import 'auth_provider.dart';
 import 'repository_provider.dart';
 
 /// État partagé de la liste des tâches, chargé depuis l'API (séance 7).
@@ -16,6 +17,11 @@ class TachesNotifier extends AsyncNotifier<List<Task>> {
   /// vaut AsyncLoading ; s'il échoue, AsyncError (bouton « Réessayer »).
   @override
   Future<List<Task>> build() async {
+    // ref.watch de la session : la liste se recharge à chaque connexion et
+    // se vide à la déconnexion. Sans session, aucune requête (elle serait
+    // refusée par un 401).
+    final session = await ref.watch(authProvider.future);
+    if (session == null) return const [];
     final taches = await ref.watch(taskRepositoryProvider).lister();
     return _trier(taches);
   }
@@ -82,8 +88,10 @@ final tacheParIdProvider = Provider.family<AsyncValue<Task?>, String>(
 /// cours restent des données locales, avec les mêmes id que db.json.
 final coursProvider = Provider<List<Course>>((ref) => demoCours);
 
-/// Utilisateur connecté (données locales jusqu'à la connexion, séance 7).
-final utilisateurProvider = Provider<User>((ref) => demoUtilisateur);
+/// Utilisateur connecté, renvoyé par /login (null si déconnecté).
+final utilisateurProvider = Provider<User?>(
+  (ref) => ref.watch(authProvider).value?.utilisateur,
+);
 
 /// Titre du cours [courseId], pour l'affichage d'une tâche.
 final titreCoursProvider = Provider.family<String, String>(

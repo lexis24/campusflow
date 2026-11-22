@@ -50,16 +50,33 @@
     }
   ],
   "cours": [
-    { "id": "c1", "title": "Réseaux informatiques", "teacher": "M. Kaboré" },
-    { "id": "c2", "title": "Bases de données", "teacher": "Mme Ilboudo" },
-    { "id": "c3", "title": "Génie logiciel", "teacher": "M. Sawadogo" },
-    { "id": "c4", "title": "Anglais technique", "teacher": "M. Zongo" }
+    {
+      "id": "c1",
+      "title": "Réseaux informatiques",
+      "teacher": "M. Kaboré"
+    },
+    {
+      "id": "c2",
+      "title": "Bases de données",
+      "teacher": "Mme Ilboudo"
+    },
+    {
+      "id": "c3",
+      "title": "Génie logiciel",
+      "teacher": "M. Sawadogo"
+    },
+    {
+      "id": "c4",
+      "title": "Anglais technique",
+      "teacher": "M. Zongo"
+    }
   ],
   "utilisateurs": [
     {
       "id": "u1",
       "name": "Sanata Ouédraogo",
-      "email": "sanata.ouedraogo@exemple.bf"
+      "email": "sanata.ouedraogo@exemple.bf",
+      "motDePasse": "campus2026"
     }
   ]
 }

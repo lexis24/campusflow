@@ -1,4 +1,6 @@
+import 'package:campusflow_app/core/session_storage.dart';
 import 'package:campusflow_app/data/fake_task_repository.dart';
+import 'package:campusflow_models/campusflow_models.dart';
 import 'package:campusflow_app/providers/filtres_provider.dart';
 import 'package:campusflow_app/providers/repository_provider.dart';
 import 'package:campusflow_app/providers/taches_provider.dart';
@@ -14,6 +16,19 @@ void main() {
     container = ProviderContainer(
       overrides: [
         taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
+        // Utilisateur connecté : sans session, la liste n'est pas chargée.
+        sessionStorageProvider.overrideWithValue(
+          MemorySessionStorage(
+            const Session(
+              jeton: 'jeton-de-test',
+              utilisateur: User(
+                id: 'u1',
+                name: 'Sanata',
+                email: 's@exemple.bf',
+              ),
+            ),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);

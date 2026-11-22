@@ -20,7 +20,11 @@ Future<bool> executerAction(
     }
     return true;
   } on ApiException catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    // 401 : l'intercepteur a déjà fermé la session et l'écran de connexion
+    // affiche « Ta session a expiré » ; un SnackBar technique ferait doublon.
+    if (e.statusCode != 401) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
     return false;
   }
 }

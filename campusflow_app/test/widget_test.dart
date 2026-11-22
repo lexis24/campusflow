@@ -1,4 +1,7 @@
+import 'package:campusflow_app/core/session_storage.dart';
+import 'package:campusflow_app/data/auth_repository.dart';
 import 'package:campusflow_app/data/fake_task_repository.dart';
+import 'package:campusflow_app/providers/auth_provider.dart';
 import 'package:campusflow_app/main.dart';
 import 'package:campusflow_app/providers/repository_provider.dart';
 import 'package:campusflow_app/screens/task_detail_screen.dart';
@@ -8,16 +11,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+/// Session ouverte utilisée par défaut dans les tests.
+const _sessionDeTest = Session(
+  jeton: 'jeton-de-test',
+  utilisateur: User(
+    id: 'u1',
+    name: 'Sanata Ouédraogo',
+    email: 'sanata.ouedraogo@exemple.bf',
+  ),
+);
+
 /// L'application complète (ProviderScope + routeur) à l'adresse [adresse].
-/// Le repository API est REMPLACÉ par le FakeTaskRepository : les tests ne
-/// dépendent pas d'un serveur allumé (injection de dépendances, séance 7).
-Widget _app({String adresse = '/taches', FakeTaskRepository? repo}) =>
-    ProviderScope(
-      overrides: [
-        taskRepositoryProvider.overrideWithValue(repo ?? FakeTaskRepository()),
-      ],
-      child: CampusFlowApp(initialLocation: adresse),
-    );
+/// Les implémentations réelles sont REMPLACÉES (injection de dépendances) :
+/// tâches et connexion en mémoire, stockage de session en mémoire. Les tests
+/// ne dépendent ni d'un serveur ni du stockage sécurisé du téléphone.
+/// Par défaut l'utilisateur est connecté ; [stockage] permet de partir
+/// déconnecté (MemorySessionStorage()) ou d'inspecter le jeton rangé.
+Widget _app({
+  String adresse = '/taches',
+  FakeTaskRepository? repo,
+  MemorySessionStorage? stockage,
+}) => ProviderScope(
+  overrides: [
+    taskRepositoryProvider.overrideWithValue(repo ?? FakeTaskRepository()),
+    authRepositoryProvider.overrideWithValue(const FakeAuthRepository()),
+    sessionStorageProvider.overrideWithValue(
+      stockage ?? MemorySessionStorage(_sessionDeTest),
+    ),
+  ],
+  child: CampusFlowApp(initialLocation: adresse),
+);
 
 /// Ouvre l'application à l'adresse [adresse], comme si l'utilisateur
 /// l'avait saisie, et attend la fin du chargement.
@@ -39,22 +62,19 @@ void main() {
   setUpAll(() => initializeDateFormatting('fr'));
 
   group('Navigation (go_router)', () {
-    testWidgets("l'application démarre sur /login", (tester) async {
-      await tester.pumpWidget(_app(adresse: '/login'));
+    testWidgets("déconnecté, l'application s'ouvre sur /login", (tester) async {
+      await tester.pumpWidget(_app(stockage: MemorySessionStorage()));
       await tester.pumpAndSettle();
 
       expect(find.text('CampusFlow'), findsOneWidget);
       // L'asset déclaré dans pubspec.yaml est affiché (séance 4).
       expect(find.bySemanticsLabel('Logo CampusFlow'), findsOneWidget);
-
-      await tester.tap(find.text('Se connecter'));
-      await tester.pumpAndSettle();
-      expect(find.text('Mes échéances'), findsOneWidget);
+      expect(find.text('Se connecter'), findsOneWidget);
     });
 
-    // Chaque écran est atteignable par son adresse (sujet, p. 4).
+    // Chaque écran est atteignable par son adresse (sujet, p. 4),
+    // une fois connecté (/login est testé ci-dessus, déconnecté).
     const ecrans = {
-      '/login': 'Se connecter',
       '/taches': 'Mes échéances',
       '/taches/nouvelle': 'Nouvelle tâche',
       '/taches/t3': 'Rapport projet réseaux',
@@ -278,6 +298,90 @@ void main() {
         find.descendant(of: ligneGL, matching: find.text('3 tâches')),
         findsOneWidget,
       );
+    });
+  });
+
+  // Séance 7 : connexion, jeton en stockage sécurisé, redirection sur 401.
+  group('Connexion', () {
+    Future<void> saisir(WidgetTester tester, String email, String mdp) async {
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'E-mail étudiant'),
+        email,
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Mot de passe'),
+        mdp,
+      );
+      await tester.tap(find.text('Se connecter'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('sans session, une adresse protégée redirige vers /login', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(adresse: '/profil', stockage: MemorySessionStorage()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Se connecter'), findsOneWidget);
+      expect(find.text('Mon profil'), findsNothing);
+    });
+
+    testWidgets('mauvais mot de passe : message, on reste sur /login', (
+      tester,
+    ) async {
+      final stockage = MemorySessionStorage();
+      await tester.pumpWidget(_app(stockage: stockage));
+      await tester.pumpAndSettle();
+
+      await saisir(tester, 'sanata.ouedraogo@exemple.bf', 'faux');
+
+      expect(find.text('E-mail ou mot de passe incorrect.'), findsOneWidget);
+      expect(stockage.session, isNull);
+    });
+
+    testWidgets('connexion réussie : jeton rangé, accès aux échéances', (
+      tester,
+    ) async {
+      final stockage = MemorySessionStorage();
+      await tester.pumpWidget(_app(stockage: stockage));
+      await tester.pumpAndSettle();
+
+      await saisir(tester, 'sanata.ouedraogo@exemple.bf', 'campus2026');
+
+      expect(find.text('Mes échéances'), findsOneWidget);
+      expect(find.text('Rapport projet réseaux'), findsOneWidget);
+      // Le jeton a été rangé dans le stockage (sécurisé dans l'application).
+      expect(stockage.session?.jeton, 'jeton-de-test');
+    });
+
+    testWidgets('« Se déconnecter » efface le jeton et ramène à /login', (
+      tester,
+    ) async {
+      final stockage = MemorySessionStorage(_sessionDeTest);
+      await tester.pumpWidget(_app(adresse: '/profil', stockage: stockage));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Se déconnecter'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Se connecter'), findsOneWidget);
+      expect(stockage.session, isNull);
+    });
+
+    testWidgets('session expirée (401) : retour à /login avec un message', (
+      tester,
+    ) async {
+      await _ouvrir(tester, '/taches');
+      // Ce que fait l'intercepteur Dio quand le serveur répond 401.
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(CampusFlowApp)),
+      );
+      await container.read(authProvider.notifier).sessionExpiree();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ta session a expiré, reconnecte-toi.'), findsOneWidget);
+      expect(find.text('Mes échéances'), findsNothing);
     });
   });
 
