@@ -1,0 +1,41 @@
+﻿Diagnostic du 2026-11-22 18:39
+
+[√] Flutter (Channel stable, 3.47.4, on Microsoft Windows [version 10.0.26300.9711], locale fr-BF) [510ms]
+    • Flutter version 3.47.4 on channel stable at C:\tools\flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 9584c6713b (2 months ago), 2026-09-10 15:25:10 -0700
+    • Engine revision 06a2e2a110
+    • Dart version 3.13.3
+    • DevTools version 2.60.0
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-record-use, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[√] Windows Version (Windows 11 or higher, 26H2, 2009) [1 164ms]
+
+[√] Android toolchain - develop for Android devices (Android SDK version 36.0.0) [741ms]
+    • Android SDK at C:\Users\compa\AppData\Local\Android\sdk
+    • Emulator version 37.3.10.0 (build_id 16970787) (CL:N/A)
+    • Platform android-37.0, build-tools 36.0.0
+    • Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    • Java version OpenJDK Runtime Environment (build 25.0.4+-16339643-b508.27)
+    • All Android licenses accepted.
+
+[√] Chrome - develop for the web [177ms]
+    • Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[√] Visual Studio - develop Windows apps (Visual Studio Build Tools 2022 17.14.21 (November 2025)) [176ms]
+    • Visual Studio at C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+    • Visual Studio Build Tools 2022 version 17.14.36717.8
+    • Windows 10 SDK version 10.0.26100.0
+
+[√] Connected device (3 available) [571ms]
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [version 10.0.26300.9711]
+    • Chrome (web)      • chrome  • web-javascript • Google Chrome 158.0.8127.36
+    • Edge (web)        • edge    • web-javascript • Microsoft Edge 158.0.4370.33
+
+[√] Network resources [897ms]
+    • All expected network resources are available.
+
+• No issues found!
+
