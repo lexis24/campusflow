@@ -1,0 +1,18 @@
+# --- Fichiers personnels à la racine, non publiés ---
+# Supports de cours, sujet du TP et documents de travail
+/*.pdf
+/*.docx
+/*.png
+/*.jpg
+/*.jpeg
+/.Rhistory
+# Brouillon d'origine de la fiche comparative (la version rendue est dans docs/seance1/)
+/recherche.md
+
+# Anciens dépôts séparés : leur historique est importé dans campusflow_models/ et campusflow_app/
+/Campus_Flow/
+
+# --- Outils ---
+.claude/
+.vscode/
+node_modules/
