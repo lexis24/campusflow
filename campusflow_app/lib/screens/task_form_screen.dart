@@ -1,21 +1,25 @@
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../providers/taches_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/dates.dart';
 
-/// Formulaire de création d'une tâche. Renvoie la nouvelle [Task] avec
-/// `Navigator.pop`, ou rien si l'utilisateur revient en arrière.
-class TaskFormScreen extends StatefulWidget {
-  const TaskFormScreen({super.key, required this.courses});
-
-  final List<Course> courses;
+/// Formulaire de création d'une tâche, adresse /taches/nouvelle.
+///
+/// Il ajoute la tâche directement dans l'état partagé (tachesProvider) :
+/// plus besoin de la renvoyer à l'écran précédent.
+/// Le texte saisi reste un état local (éphémère) : setState suffit.
+class TaskFormScreen extends ConsumerStatefulWidget {
+  const TaskFormScreen({super.key});
 
   @override
-  State<TaskFormScreen> createState() => _TaskFormScreenState();
+  ConsumerState<TaskFormScreen> createState() => _TaskFormScreenState();
 }
 
-class _TaskFormScreenState extends State<TaskFormScreen> {
+class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -82,7 +86,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       dueDate: _dueDate,
       courseId: _courseId!,
     );
-    Navigator.of(context).pop(task);
+    // ref.read dans une action : on appelle le Notifier sans l'écouter.
+    ref.read(tachesProvider.notifier).ajouter(task);
+    // SnackBar de confirmation : le ScaffoldMessenger de l'application
+    // l'affiche encore sur l'écran Échéances après la fermeture.
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('« ${task.title} » ajoutée')));
+    context.pop();
   }
 
   @override
@@ -115,7 +125,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 initialValue: _courseId,
                 decoration: const InputDecoration(labelText: 'Cours'),
                 items: [
-                  for (final course in widget.courses)
+                  // ref.watch dans build : la liste des cours partagée.
+                  for (final course in ref.watch(coursProvider))
                     DropdownMenuItem(
                       value: course.id,
                       child: Text(course.title),

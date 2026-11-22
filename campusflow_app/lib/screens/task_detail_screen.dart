@@ -1,46 +1,38 @@
 import 'package:campusflow_models/campusflow_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/taches_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/dates.dart';
 
-/// Page de détail d'une tâche (utilisée sur téléphone, ouverte par-dessus la
-/// liste).
-class TaskDetailScreen extends StatefulWidget {
-  const TaskDetailScreen({
-    super.key,
-    required this.task,
-    required this.courseTitle,
-    required this.onChanged,
-  });
+/// Écran Détail, adresse /taches/:id (écran secondaire, sur téléphone).
+///
+/// Il ne reçoit que l'identifiant lu dans l'adresse, et retrouve la tâche
+/// dans l'état partagé : plus de paramètres ni de callbacks à transmettre.
+class TaskDetailScreen extends ConsumerWidget {
+  const TaskDetailScreen({super.key, required this.id});
 
-  final Task task;
-  final String courseTitle;
-
-  /// Prévient l'écran principal quand la tâche a été modifiée.
-  final ValueChanged<Task> onChanged;
+  /// Valeur du paramètre :id de l'adresse.
+  final String id;
 
   @override
-  State<TaskDetailScreen> createState() => _TaskDetailScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ref.watch : si la tâche change (cochée), l'écran se reconstruit.
+    final task = ref.watch(tacheParIdProvider(id));
 
-class _TaskDetailScreenState extends State<TaskDetailScreen> {
-  late Task _task = widget.task;
-
-  void _toggleDone() {
-    setState(() => _task = _task.copyWith(done: !_task.done));
-    widget.onChanged(_task);
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Détail')),
-      body: TaskDetailView(
-        task: _task,
-        courseTitle: widget.courseTitle,
-        onToggleDone: _toggleDone,
-      ),
+      body: task == null
+          // Adresse saisie à la main avec un id qui n'existe pas.
+          ? Center(child: Text('Tâche introuvable ($id).'))
+          : TaskDetailView(
+              task: task,
+              courseTitle: ref.watch(titreCoursProvider(task.courseId)),
+              // ref.read dans une action (règle n° 2 du cours).
+              onToggleDone: () =>
+                  ref.read(tachesProvider.notifier).basculer(task.id),
+            ),
     );
   }
 }

@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
 
-/// Écran de titre affiché au lancement de l'application (séance 4).
+/// Écran de connexion, adresse /login (hors barre de navigation).
 ///
-/// Toutes les couleurs et tailles viennent du thème : aucune valeur en dur.
-class TitleScreen extends StatelessWidget {
-  const TitleScreen({super.key});
-
-  void _start(BuildContext context) {
-    // pushReplacement : on ne revient pas sur l'écran de titre avec « retour ».
-    Navigator.of(context)
-        .pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
-  }
+/// Il reprend l'écran de titre de la séance 4 (logo en asset, titre).
+/// En séance 6, « Se connecter » mène simplement aux échéances ; les
+/// champs e-mail / mot de passe et le jeton arrivent en séance 7.
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +24,7 @@ class TitleScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              // Asset déclaré dans pubspec.yaml (flutter > assets).
+              // Asset déclaré dans pubspec.yaml (séance 4).
               // semanticLabel : lu par le lecteur d'écran (accessibilité).
               Image.asset(
                 'assets/images/logo.png',
@@ -51,8 +47,9 @@ class TitleScreen extends StatelessWidget {
               ),
               const Spacer(),
               FilledButton(
-                onPressed: () => _start(context),
-                child: const Text('Commencer'),
+                // go : on remplace la pile, le retour ne ramène pas ici.
+                onPressed: () => context.go('/taches'),
+                child: const Text('Se connecter'),
               ),
             ],
           ),
