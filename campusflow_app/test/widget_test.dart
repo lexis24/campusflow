@@ -227,6 +227,24 @@ void main() {
     expect(find.text('Fiche de révision'), findsOneWidget);
   });
 
+  // Le seuil se teste à sa limite exacte : 839 dp → liste seule,
+  // 840 dp → liste et détail côte à côte (LayoutBuilder, séance 5).
+  for (final (largeur, coteACote) in [(839.0, false), (840.0, true)]) {
+    testWidgets('à $largeur dp, côte à côte : $coteACote', (tester) async {
+      tester.view.physicalSize = Size(largeur, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await _openApp(tester);
+
+      expect(
+        find.text('Choisis une échéance à gauche.'),
+        coteACote ? findsOneWidget : findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('sur tablette, liste et détail sont côte à côte', (tester) async {
     // Écran de 1280 x 800, au-dessus du seuil de 840 dp.
     tester.view.physicalSize = const Size(1280, 800);
